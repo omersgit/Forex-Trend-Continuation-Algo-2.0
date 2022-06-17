@@ -1,0 +1,30 @@
+ double GetSL(int Otype,double Oprice)
+ {
+   double SL=0;
+      if(Otype==OP_BUY)
+      {
+         SL=Oprice-SLPips*PipVal;
+      }
+      if(Otype==OP_SELL)
+      {
+         SL=Oprice+SLPips*PipVal;
+      }
+   return(SL);
+ }
+//+------------------------------------------------------------------+
+int CountOrders(int OType)
+ {
+  int C=0;
+  for(int i=OrdersTotal();i>=0;i--)
+  {
+   bool SelectSells= OrderSelect(i,SELECT_BY_POS);
+   if(SelectSells)
+   {
+      if(OrderMagicNumber()==MagicNumber && OrderSymbol()==Symbol() && OrderType()==OType)
+      {
+        C++; 
+      }     
+   }
+  }
+  return(C);
+ }
