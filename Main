@@ -1,0 +1,203 @@
+//+------------------------------------------------------------------+
+//|                                                      Omer EA.mq4 |
+//|                        Copyright 2021, MetaQuotes Software Corp. |
+//|                                             https://www.mql5.com |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2021, MetaQuotes Software Corp."
+#property link      "https://www.mql5.com"
+#property version   "1.00"
+#property strict
+
+enum enTimeFrames
+{
+   tf_cu  = 0,              // Current time frame
+   tf_m1  = PERIOD_M1,      // 1 Minute
+   tf_m5  = PERIOD_M5,      // 5 Minutes
+   tf_m15 = PERIOD_M15,     // 15 Minutes
+   tf_m30 = PERIOD_M30,     // 30 Minutes
+   tf_h1  = PERIOD_H1,      // 1 Hour
+   tf_h4  = PERIOD_H4,      // 4 Hours
+   tf_d1  = PERIOD_D1,      // Daily
+   tf_w1  = PERIOD_W1,      // Weekly
+   tf_mn1 = PERIOD_MN1      // Monthly
+};
+
+extern string EA_Main_Settings="<<<<<EA MAIN SETTINGS>>>>>";
+extern enTimeFrames TimeFrame=tf_h1;//Timeframe of Close Price
+extern double PipGapHigh=50;//Pip for High
+extern double PipGapLow=50;//Pip for Low
+
+extern string Trade_Settings="<<<<<TRADE SETTINGS>>>>>";
+extern double LotSize=0.01;//Lot Size
+extern double SLPips=20;//Stoploss Pips
+extern double TPPips=30;//Takeprofit Pips
+extern int Slipage=5;
+extern int MagicNumber=654198666;
+
+double PipVal,CheckingPrice;
+datetime CandleTime=0; 
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+  {
+//---
+   if(_Digits>=4)
+   {
+      PipVal=0.0001;
+   }
+   else
+   {
+      PipVal=0.01;
+   }
+   CheckingPrice=Bid;
+//---
+   return(INIT_SUCCEEDED);
+  }
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+  {
+//---
+   ObjectsDeleteAll();
+  }
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+//---
+   BreakEven();
+   if(Ask>=CheckingPrice+PipGapHigh*PipVal && CountOrders(OP_SELL)==0 && CheckingPrice>0)
+   {  
+      OpenOrder(OP_SELL,Bid);
+      CheckingPrice=-1; 
+   }
+   if(Bid<=CheckingPrice-PipGapLow*PipVal && CountOrders(OP_BUY)==0 && CheckingPrice>0)
+   {
+      OpenOrder(OP_BUY,Ask);  
+      CheckingPrice=-1; 
+   }
+   if(CountOrders(OP_BUY)+CountOrders(OP_SELL)==0 && CheckingPrice==-1)
+   {
+      CandleTime=iTime(_Symbol,TimeFrame,0);
+      CheckingPrice=0;
+   }
+   if(CountOrders(OP_BUY)+CountOrders(OP_SELL)==0 && CheckingPrice==0 && CandleTime==iTime(_Symbol,TimeFrame,1))
+   {
+      CheckingPrice=iClose(_Symbol,TimeFrame,1);
+   }
+  }
+//+------------------------------------------------------------------+
+void OpenOrder(int OType,double OpenPrice)
+ {
+  int Ticket = OrderSend  //Short
+                     (
+                        _Symbol, //curency pair of the chart
+                        OType, //posision
+                        LotSize, //lot size
+                        OpenPrice, //order open place
+                        Slipage, //slipage
+                        GetSL(OType,OpenPrice), //stoploss
+                        GetTP(OType,OpenPrice), //takeprofit
+                        NULL,
+                        MagicNumber,
+                        0,
+                        Red
+                     );                  
+  
+ }
+//+------------------------------------------------------------------+
+ void CloseOrders(int Otype, double ClosePrice)
+ {
+  for(int i=OrdersTotal();i>=0;i--)
+  {
+   bool SelectBuys= OrderSelect(i,SELECT_BY_POS);
+   if(SelectBuys)
+   {
+      if(OrderType()==Otype && OrderMagicNumber()==MagicNumber && OrderSymbol()==Symbol())
+      {
+         bool OClose= OrderClose(OrderTicket(),OrderLots(),ClosePrice,3,Blue); 
+      }    
+   }
+  }
+ }
+//+------------------------------------------------------------------+
+ double GetTP(int Otype,double Oprice)
+ {
+   double TP=0;
+      if(Otype==OP_BUY)
+      {
+         TP=Oprice+TPPips*PipVal;
+      }
+      if(Otype==OP_SELL)
+      {
+         TP=Oprice-TPPips*PipVal;
+      }
+   return(TP);
+ }
+//+------------------------------------------------------------------+ 
+ double GetSL(int Otype,double Oprice)
+ {
+   double SL=0;
+      if(Otype==OP_BUY)
+      {
+         SL=Oprice-SLPips*PipVal;
+      }
+      if(Otype==OP_SELL)
+      {
+         SL=Oprice+SLPips*PipVal;
+      }
+   return(SL);
+ }
+//+------------------------------------------------------------------+
+int CountOrders(int OType)
+ {
+  int C=0;
+  for(int i=OrdersTotal();i>=0;i--)
+  {
+   bool SelectSells= OrderSelect(i,SELECT_BY_POS);
+   if(SelectSells)
+   {
+      if(OrderMagicNumber()==MagicNumber && OrderSymbol()==Symbol() && OrderType()==OType)
+      {
+        C++; 
+      }     
+   }
+  }
+  return(C);
+ }
+//+------------------------------------------------------------------+
+void BreakEven() 
+ {  
+   for(int i=OrdersTotal(); i>=0; i--) 
+   {
+      bool SelectOrder= OrderSelect(i, SELECT_BY_POS, MODE_TRADES); 
+      if(SelectOrder)
+      {    
+         if(OrderType() == OP_BUY && OrderSymbol()==Symbol() && OrderMagicNumber()==MagicNumber) 
+         {
+            if(OrderOpenPrice() < Bid-SLPips*PipVal) 
+            {
+             if(OrderStopLoss() < OrderOpenPrice())
+             {
+               bool BuyMod= OrderModify(OrderTicket(), OrderOpenPrice(), OrderOpenPrice(), OrderTakeProfit(), OrderExpiration(), CLR_NONE);
+             }
+            }
+         } 
+         else if(OrderType() == OP_SELL && OrderSymbol()==Symbol() && OrderMagicNumber()==MagicNumber) 
+         {            
+            if(OrderOpenPrice() > Ask+SLPips*PipVal) 
+            {
+             if(OrderStopLoss() > OrderOpenPrice()) 
+             {
+               bool SellMod= OrderModify(OrderTicket(), OrderOpenPrice(), OrderOpenPrice(), OrderTakeProfit(), OrderExpiration(), CLR_NONE);
+             }
+            }
+         }
+       
+     }
+    // else{Print("Order selecting Error",GetLastError());} 
+   }
+}
