@@ -1,0 +1,1 @@
+# Forex-Trend-Continuation-EA-2.0
