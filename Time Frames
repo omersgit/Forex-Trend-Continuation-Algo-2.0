@@ -1,0 +1,13 @@
+enum enTimeFrames
+{
+   tf_cu  = 0,              // Current time frame
+   tf_m1  = PERIOD_M1,      // 1 Minute
+   tf_m5  = PERIOD_M5,      // 5 Minutes
+   tf_m15 = PERIOD_M15,     // 15 Minutes
+   tf_m30 = PERIOD_M30,     // 30 Minutes
+   tf_h1  = PERIOD_H1,      // 1 Hour
+   tf_h4  = PERIOD_H4,      // 4 Hours
+   tf_d1  = PERIOD_D1,      // Daily
+   tf_w1  = PERIOD_W1,      // Weekly
+   tf_mn1 = PERIOD_MN1      // Monthly
+};
