@@ -1,0 +1,21 @@
+ BreakEven();
+   if(Ask>=CheckingPrice+PipGapHigh*PipVal && CountOrders(OP_SELL)==0 && CheckingPrice>0)
+   {  
+      OpenOrder(OP_SELL,Bid);
+      CheckingPrice=-1; 
+   }
+   if(Bid<=CheckingPrice-PipGapLow*PipVal && CountOrders(OP_BUY)==0 && CheckingPrice>0)
+   {
+      OpenOrder(OP_BUY,Ask);  
+      CheckingPrice=-1; 
+   }
+   if(CountOrders(OP_BUY)+CountOrders(OP_SELL)==0 && CheckingPrice==-1)
+   {
+      CandleTime=iTime(_Symbol,TimeFrame,0);
+      CheckingPrice=0;
+   }
+   if(CountOrders(OP_BUY)+CountOrders(OP_SELL)==0 && CheckingPrice==0 && CandleTime==iTime(_Symbol,TimeFrame,1))
+   {
+      CheckingPrice=iClose(_Symbol,TimeFrame,1);
+   }
+  }
