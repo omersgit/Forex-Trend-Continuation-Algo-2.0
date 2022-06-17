@@ -1,0 +1,14 @@
+extern string EA_Main_Settings="<<<<<EA MAIN SETTINGS>>>>>";
+extern enTimeFrames TimeFrame=tf_h1;//Timeframe of Close Price
+extern double PipGapHigh=50;//Pip for High
+extern double PipGapLow=50;//Pip for Low
+
+extern string Trade_Settings="<<<<<TRADE SETTINGS>>>>>";
+extern double LotSize=0.01;//Lot Size
+extern double SLPips=20;//Stoploss Pips
+extern double TPPips=30;//Takeprofit Pips
+extern int Slipage=5;
+extern int MagicNumber=654198666;
+
+double PipVal,CheckingPrice;
+datetime CandleTime=0; 
